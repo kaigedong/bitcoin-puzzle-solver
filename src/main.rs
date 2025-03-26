@@ -6,9 +6,9 @@ extern crate secp256k1;
 
 mod on_found;
 
-use bitcoin::network::constants::Network;
-use bitcoin::util::address::Address;
-use bitcoin::util::key::PrivateKey;
+use bitcoin::Address;
+use bitcoin::PrivateKey;
+use bitcoin::network::Network;
 use on_found::OnFound;
 use rand::Rng;
 use std::env;
@@ -16,8 +16,8 @@ use std::thread;
 use std::time::Instant;
 use thousands::Separable;
 
-const POWER: u32 = 67;
-const TARGET: &str = "1NBC8uXJy1GiJ6drkiZa1WuKn51ps7EPTv";
+const POWER: u32 = 68;
+const TARGET: &str = "1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ";
 
 const CONSOLE_PRINT_THRESHOLD: u128 = 500_000_000;
 
@@ -45,8 +45,8 @@ fn main() {
 
     for _ in 0..num_threads {
         let handle = thread::spawn(move || {
-            let mut rng = rand::thread_rng();
-            random_lookfor(rng.gen_range(begin..end), Some(&on_found::on_found));
+            let mut rng = rand::rng();
+            random_lookfor(rng.random_range(begin..end), Some(&on_found::on_found));
         });
         handles.push(handle);
     }
@@ -73,8 +73,8 @@ fn random_lookfor(begin: u128, on_found: Option<&OnFound>) {
         let private_key_bytes = hex::decode(private_key_hex.clone()).unwrap();
         let private_key: PrivateKey = PrivateKey {
             compressed: true,
-            network: Network::Bitcoin,
-            key: bitcoin::secp256k1::SecretKey::from_slice(&private_key_bytes).unwrap(),
+            network: bitcoin::NetworkKind::Main,
+            inner: bitcoin::secp256k1::SecretKey::from_slice(&private_key_bytes).unwrap(),
         };
         let public_key = private_key.public_key(&secp);
         let address = Address::p2pkh(&public_key, Network::Bitcoin).to_string();
@@ -87,7 +87,7 @@ fn random_lookfor(begin: u128, on_found: Option<&OnFound>) {
                 private_key,
                 address
             );
-           
+
             if let Some(on_found_callback) = on_found {
                 on_found_callback(value, private_key, address);
             }
